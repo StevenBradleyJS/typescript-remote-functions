@@ -1,5 +1,4 @@
 import * as t from 'io-ts';
-import * as uuid from 'uuid/v4';
 
 /* Receiving function calls */
 
@@ -63,10 +62,14 @@ export class FunctionHandler<C> {
 export type Sender<I, O> = (name: string, makeToken: () => string, input: I) => Promise<O>;
 type AsyncFN<I, O> = (i: I) => Promise<O>;
 
+/* The time by itself is probably unique enough since Node.js and browsers
+   are usually single threaded, but let's add a salt just in case. */
+const uuid = () => Date.now().toString() + Math.round(Math.random() * 256).toString(16);
+
 export function realize<I, O>(decl: NamedFnDef<I, O>): (fn: Sender<I, O>) => AsyncFN<I, O> {
   return (send) => (
     async (input) => (
-      await send(decl.name, () => uuid(), input)
+      await send(decl.name, uuid, input)
     )
   );
 }
